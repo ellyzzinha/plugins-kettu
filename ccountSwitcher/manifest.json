@@ -1,0 +1,12 @@
+{
+  "name": "AccountSwitcher",
+  "description": "Enables account switcher because discord got rid of experiment",
+  "authors": [
+    {
+      "name": "nyxielly",
+      "id": "0"
+    }
+  ],
+  "main": "index.js",
+  "hash": "1.0.0"
+}
