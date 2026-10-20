@@ -13,7 +13,7 @@ function onLoad() {
         var after = patcher && patcher.after;
 
         if (!findByProps || !after) {
-            console.error("[AccountSwitcher] apis do metro/patcher nao encontradas.");
+            console.error("[AccountSwitcher] APIs do metro/patcher nao encontradas.");
             return;
         }
 
@@ -41,11 +41,11 @@ function onLoad() {
                 });
                 changedNotificationProperty = true;
             } catch (err) {
-                console.error("[AccountSwitcher] erro ao alterar MultiAccountStore:", err);
+                console.error("[AccountSwitcher] Erro ao alterar MultiAccountStore:", err);
             }
         }
     } catch (e) {
-        console.error("[AccountSwitcher] erro fatal no onLoad:", e);
+        console.error("[AccountSwitcher] Erro no onLoad:", e);
     }
 }
 
@@ -76,7 +76,7 @@ function onUnload() {
     changedNotificationProperty = false;
 }
 
-module.exports = {
+export default {
     onLoad: onLoad,
     onUnload: onUnload
 };
