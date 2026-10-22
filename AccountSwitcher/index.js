@@ -1,82 +1,47 @@
-var patches = [];
-var MultiAccountStore = null;
-var previousNotificationDescriptor = null;
-var changedNotificationProperty = false;
+// name: AccountSwitcher
+// description: Enables account switcher because discord got rid of experiment
+// author: nyxielly
+// version: 1.1.0
 
-function onLoad() {
-    try {
-        var metro = (window.vendetta && window.vendetta.metro) || (window.vencord && window.vencord.metro) || window.metro;
-        var patcher = (window.vendetta && window.vendetta.patcher) || (window.vencord && window.vencord.patcher) || window.patcher;
+window.rikaPlugins = window.rikaPlugins || {};
+window.rikaPlugins.AccountSwitcher = {
+    onLoad() {
+        try {
+            var metro = window.vendetta && window.vendetta.metro;
+            var patcher = window.vendetta && window.vendetta.patcher;
+            if (!metro || !patcher) return;
 
-        var findByProps = metro && metro.findByProps;
-        var findByStoreName = metro && metro.findByStoreName;
-        var after = patcher && patcher.after;
+            var AccountDispatcher = metro.findByProps("getCanUseMultiAccountMobile");
+            var MultiAccountStore = metro.findByStoreName("MultiAccountStore");
 
-        if (!findByProps || !after) {
-            console.error("[AccountSwitcher] APIs do metro/patcher nao encontradas.");
-            return;
-        }
-
-        var AccountDispatcher = findByProps("getCanUseMultiAccountMobile");
-        MultiAccountStore = findByStoreName ? findByStoreName("MultiAccountStore") : null;
-
-        if (AccountDispatcher && typeof AccountDispatcher.getCanUseMultiAccountMobile === "function") {
-            patches.push(
-                after("getCanUseMultiAccountMobile", AccountDispatcher, function () {
+            if (AccountDispatcher && typeof AccountDispatcher.getCanUseMultiAccountMobile === "function") {
+                this.unpatch = patcher.after("getCanUseMultiAccountMobile", AccountDispatcher, function () {
                     return true;
-                })
-            );
-        }
+                });
+            }
 
-        if (MultiAccountStore) {
-            previousNotificationDescriptor = Object.getOwnPropertyDescriptor(
-                MultiAccountStore,
-                "canUseMultiAccountNotifications"
-            );
-
-            try {
+            if (MultiAccountStore) {
+                this.oldDescriptor = Object.getOwnPropertyDescriptor(MultiAccountStore, "canUseMultiAccountNotifications");
                 Object.defineProperty(MultiAccountStore, "canUseMultiAccountNotifications", {
                     get: function () { return true; },
                     configurable: true
                 });
-                changedNotificationProperty = true;
-            } catch (err) {
-                console.error("[AccountSwitcher] Erro ao alterar MultiAccountStore:", err);
             }
+        } catch (e) {
+            console.error("[AccountSwitcher] Erro:", e);
         }
-    } catch (e) {
-        console.error("[AccountSwitcher] Erro no onLoad:", e);
-    }
-}
-
-function onUnload() {
-    for (var i = patches.length - 1; i >= 0; i--) {
+    },
+    onUnload() {
+        if (this.unpatch) this.unpatch();
         try {
-            if (typeof patches[i] === "function") patches[i]();
-        } catch (e) {}
-    }
-    patches.length = 0;
-
-    if (MultiAccountStore && changedNotificationProperty) {
-        try {
-            if (previousNotificationDescriptor) {
-                Object.defineProperty(
-                    MultiAccountStore,
-                    "canUseMultiAccountNotifications",
-                    previousNotificationDescriptor
-                );
-            } else {
-                delete MultiAccountStore.canUseMultiAccountNotifications;
+            var MultiAccountStore = window.vendetta && window.vendetta.metro && window.vendetta.metro.findByStoreName("MultiAccountStore");
+            if (MultiAccountStore) {
+                if (this.oldDescriptor) {
+                    Object.defineProperty(MultiAccountStore, "canUseMultiAccountNotifications", this.oldDescriptor);
+                } else {
+                    delete MultiAccountStore.canUseMultiAccountNotifications;
+                }
             }
         } catch (e) {}
     }
-
-    MultiAccountStore = null;
-    previousNotificationDescriptor = null;
-    changedNotificationProperty = false;
-}
-
-export default {
-    onLoad: onLoad,
-    onUnload: onUnload
 };
